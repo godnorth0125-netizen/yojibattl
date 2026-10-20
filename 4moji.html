@@ -1,0 +1,1056 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>熟語闘技場 - 漢字バトルグラウンズ -</title>
+    <style>
+        body {
+            background-color: #121212;
+            color: #ffffff;
+            font-family: 'Helvetica Neue', Arial, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 10px;
+        }
+        .container {
+            max-width: 850px;
+            margin: 0 auto;
+            background: #1e1e1e;
+            padding: 25px 20px;
+            border-radius: 16px;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.7);
+            border: 1px solid #333;
+            box-sizing: border-box;
+        }
+        
+        .title-logo {
+            font-size: 32px;
+            font-weight: 900;
+            color: #ffcc00;
+            margin-bottom: 5px;
+            text-shadow: 0 0 15px rgba(255,204,0,0.4);
+            letter-spacing: 2px;
+        }
+        .title-sub {
+            font-size: 14px;
+            color: #888;
+            margin-bottom: 25px;
+            letter-spacing: 1px;
+        }
+        .start-box {
+            background: #252525;
+            border: 2px dashed #444;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+        .selected-word-preview {
+            font-size: 36px;
+            font-weight: bold;
+            color: #4da6ff;
+            letter-spacing: 6px;
+            margin: 10px 0;
+            text-shadow: 0 0 10px rgba(77,166,255,0.3);
+        }
+
+        .speed-selector {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 20px;
+        }
+        .speed-btn {
+            background: #333;
+            color: #aaa;
+            border: 1px solid #555;
+            padding: 8px 12px;
+            font-size: 13px;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .speed-btn.active {
+            background: #ff4500;
+            color: white;
+            border-color: #ff6347;
+            font-weight: bold;
+            box-shadow: 0 0 8px rgba(255,69,0,0.5);
+        }
+
+        h2 { color: #ffcc00; }
+        p { color: #ccc; font-size: 14px; }
+        
+        button {
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: bold;
+            background: linear-gradient(135deg, #ff4500, #ff6347);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: 0.2s;
+            box-shadow: 0 4px 12px rgba(255,69,0,0.4);
+            touch-action: manipulation;
+        }
+        button:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(255,69,0,0.6); }
+        .btn-sub { 
+            background: linear-gradient(135deg, #444, #555);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            font-size: 14px;
+            padding: 10px 18px;
+        }
+        
+        .screen { display: none; }
+        
+        .battle-area {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin: 15px 0;
+        }
+        .team-box {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            background: #161616;
+            padding: 12px 8px;
+            border-radius: 10px;
+            min-height: 120px;
+            align-items: center;
+            flex-wrap: wrap;
+            border: 1px solid #282828;
+        }
+        .card {
+            background: #2a2a2a;
+            border: 2px solid #555;
+            width: 82px;
+            padding: 6px 2px;
+            border-radius: 8px;
+            position: relative;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: 0.15s;
+        }
+        .card.player { border-color: #4da6ff; }
+        .card.enemy { border-color: #ff4d4d; }
+        .card.star2 { border-color: #ffcc00; background: #3a3311; box-shadow: 0 0 10px rgba(255,204,0,0.5); }
+        .card.dead { opacity: 0.3; background: #1a1a1a; border-color: #333; }
+        
+        @keyframes shake {
+            0% { transform: translate(0, 0); }
+            20% { transform: translate(-4px, 2px); }
+            40% { transform: translate(4px, -2px); }
+            60% { transform: translate(-2px, -2px); }
+            80% { transform: translate(2px, 2px); }
+            100% { transform: translate(0, 0); }
+        }
+        .card.damage-flash {
+            animation: shake 0.3s ease;
+            border-color: #fff !important;
+            background: #552222 !important;
+        }
+
+        .card .star-badge { position: absolute; top: -6px; right: -6px; background: #ffcc00; color: #000; font-size: 9px; font-weight: bold; padding: 1px 4px; border-radius: 8px; }
+        .card .char { font-size: 24px; font-weight: bold; margin: 2px 0; }
+        .card .stats { font-size: 10px; color: #ffcc00; margin-top: 2px; }
+        
+        .ability-badge {
+            font-size: 9px;
+            font-weight: bold;
+            padding: 1px 6px;
+            border-radius: 4px;
+            margin-bottom: 2px;
+            min-height: 12px;
+            display: inline-block;
+        }
+        .ability-none { background: transparent; color: transparent; }
+        .ability-shield { background: #0044aa; color: #66ccff; border: 1px solid #3388ff; box-shadow: 0 0 5px rgba(51,136,255,0.5); }
+        .ability-taunt  { background: #aa2200; color: #ff9966; border: 1px solid #ff4400; box-shadow: 0 0 5px rgba(255,68,0,0.5); }
+        .ability-swift  { background: #006622; color: #66ff99; border: 1px solid #00cc44; box-shadow: 0 0 5px rgba(0,204,68,0.5); }
+        
+        .card .flavor {
+            font-size: 8px;
+            color: #ffdd88;
+            background: #111;
+            border: 1px solid #444;
+            padding: 2px 2px;
+            margin-top: 3px;
+            border-radius: 3px;
+            width: 90%;
+            min-height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            line-height: 1.1;
+            overflow: hidden;
+        }
+        
+        #log-box {
+            background: #111;
+            border: 1px solid #444;
+            height: 140px;
+            overflow-y: auto;
+            text-align: left;
+            padding: 8px;
+            font-size: 11px;
+            font-family: monospace;
+            color: #ddd;
+            margin-top: 12px;
+            border-radius: 6px;
+        }
+        .log-entry { margin-bottom: 4px; }
+        .log-win { color: #55ff55; font-weight: bold; }
+        .log-lose { color: #ff5555; font-weight: bold; }
+
+        .growth-report {
+            background: #222a11;
+            border: 1px solid #55aa22;
+            color: #88ff44;
+            padding: 10px;
+            border-radius: 8px;
+            font-size: 13px;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+        .draft-container {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin: 15px 0;
+        }
+        .draft-lane {
+            background: #161616;
+            border: 1px solid #333;
+            border-radius: 10px;
+            padding: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            width: 170px;
+        }
+        .draft-card {
+            background: #2a2a2a;
+            border: 2px solid #ff4d4d;
+            width: 90px;
+            padding: 6px 2px;
+            border-radius: 8px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            box-sizing: border-box;
+        }
+        .draft-card.player-card {
+            border-color: #4da6ff;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .draft-card.player-card:hover {
+            transform: scale(1.05);
+            border-color: #ffcc00;
+            background: #333;
+        }
+        .lane-title {
+            font-size: 11px;
+            color: #ffcc00;
+            font-weight: bold;
+            margin-bottom: 2px;
+        }
+
+        .gameover-title-word {
+            font-size: 32px;
+            font-weight: 900;
+            color: #ffcc00;
+            letter-spacing: 6px;
+            margin: 10px 0;
+            text-shadow: 0 0 15px rgba(255,204,0,0.5);
+            background: #161616;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #333;
+        }
+        
+        /* 【ゲームオーバー時のフレーバー強調】：大きく、目立つゴールドカラーに */
+        .gameover-flavor-summary {
+            font-size: 17px;
+            color: #ffcc00;
+            margin-bottom: 15px;
+            line-height: 1.6;
+            background: #161616;
+            padding: 14px;
+            border-radius: 8px;
+            border: 1px solid #ffcc00;
+            font-weight: bold;
+            text-shadow: 0 0 10px rgba(255,204,0,0.3);
+        }
+    </style>
+</head>
+<body>
+
+    <!-- タイトル画面 -->
+    <div id="title-screen" class="container">
+        <div class="title-logo">⚔️ 熟語闘技場 ⚔️</div>
+        <div class="title-sub">- KANJI BATTLE GROUNDS -</div>
+        
+        <div class="start-box">
+            <p style="margin:0; color:#aaa; font-size:13px;">出陣する四字熟語</p>
+            <div class="selected-word-preview" id="title-word-display">一期一会</div>
+            <br>
+            <button class="btn-sub" onclick="pickRandomTitleWord()">🎲 別な熟語を選ぶ</button>
+        </div>
+
+        <p style="margin: 5px 0 8px 0; color:#aaa; font-size:12px;">【 ゲームスピード選択 】</p>
+        <div class="speed-selector">
+            <button class="speed-btn" id="spd-0.5" onclick="setGameSpeed(0.5)">0.5倍速</button>
+            <button class="speed-btn active" id="spd-1" onclick="setGameSpeed(1)">通常 (1倍)</button>
+            <button class="speed-btn" id="spd-2" onclick="setGameSpeed(2)">2倍速</button>
+            <button class="speed-btn" id="spd-4" onclick="setGameSpeed(4)">4倍速</button>
+        </div>
+        <br>
+        <button onclick="startGame()" style="font-size: 18px; padding: 14px 35px;">闘技場へ出陣する</button>
+    </div>
+
+    <!-- バトル画面 -->
+    <div id="game-screen" class="screen container">
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <h2 id="stage-title" style="margin:0; color:#ffcc00; font-size:18px;">第1戦</h2>
+            <div style="display: flex; gap: 15px; align-items: center;">
+                <div id="current-speed-label" style="font-size: 12px; color: #aaa; background: #252525; padding: 4px 8px; border-radius: 4px;">速度: 1倍速</div>
+                <div id="win-streak" style="font-size: 14px; color: #55ff55;">連勝数: 0</div>
+            </div>
+        </div>
+        
+        <div class="battle-area">
+            <div>
+                <p id="enemy-label" style="margin:0 0 4px 0; color:#ff4d4d; font-size:12px;">【敵チーム】</p>
+                <div class="team-box" id="enemy-team"></div>
+            </div>
+            
+            <div style="font-size: 16px; font-weight: bold; color: #ffcc00;">VS</div>
+            
+            <div>
+                <div class="team-box" id="player-team"></div>
+                <p style="margin:4px 0 0 0; color:#4da6ff; font-size:12px;">【あなたのチーム】</p>
+            </div>
+        </div>
+
+        <button id="btn-battle" onclick="runAutoBattle()">バトル開始！</button>
+
+        <div id="log-box"></div>
+    </div>
+
+    <!-- ドラフト画面（勝利後） -->
+    <div id="draft-screen" class="screen container">
+        <h2 style="font-size: 18px;">🎉 勝利！ チームが成長＆文字奪取！</h2>
+        
+        <div class="growth-report" id="growth-report-box">🌱 成長中...</div>
+
+        <p style="font-size: 12px; margin-bottom: 5px;">
+            【チェンジ制約】同じ位置のレーン同士でのみ入れ替え・合体が可能です。<br>
+            下にある「自分の文字カード」をクリックして選択してください。
+        </p>
+        
+        <div class="draft-container" id="draft-lanes-container"></div>
+        
+        <br>
+        <button onclick="startNextBattle()" style="background:#555; padding: 8px 12px; font-size: 13px;">入れ替えずに次へ</button>
+    </div>
+
+    <!-- ゲームオーバー画面 -->
+    <div id="gameover-screen" class="screen container">
+        <h1 style="color:#ff5555; font-size: 22px; margin-bottom:5px;">💀 敗北... ゲームオーバー</h1>
+        <p id="final-score" style="font-size: 16px; color:#ffcc00; font-weight:bold; margin-top:0;"></p>
+        
+        <p style="margin: 5px 0 2px 0; color:#aaa; font-size:11px;">【 最終到達した四字熟語 】</p>
+        <div class="gameover-title-word" id="go-title-word">----</div>
+
+        <p style="margin: 5px 0 2px 0; color:#aaa; font-size:11px;">【 フレーバーが紡ぐ一つの意味 】</p>
+        <!-- フレーバーを大きく、目立つ色で強調 -->
+        <div class="gameover-flavor-summary" id="go-flavor-summary">---</div>
+        
+        <p style="margin: 10px 0 4px 0; color:#4da6ff; font-size:12px;">【 力尽きた時の最終チーム 】</p>
+        <div class="team-box" id="gameover-team-box"></div>
+
+        <br>
+        <button onclick="resetToTitle()">タイトルに戻る</button>
+    </div>
+
+    <script>
+        let audioCtx = null;
+        function initAudio() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+
+        function playHitSound(damage) {
+            try {
+                initAudio();
+                if (!audioCtx) return;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                const now = audioCtx.currentTime;
+
+                if (damage <= 3) {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(300, now);
+                    osc.frequency.exponentialRampToValueAtTime(150, now + 0.08);
+                    gain.gain.setValueAtTime(0.08, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.08);
+                    osc.start(now);
+                    osc.stop(now + 0.08);
+                } else if (damage >= 8) {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(120, now);
+                    osc.frequency.exponentialRampToValueAtTime(40, now + 0.25);
+                    gain.gain.setValueAtTime(0.25, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.25);
+                    osc.start(now);
+                    osc.stop(now + 0.25);
+                } else {
+                    osc.type = 'triangle';
+                    osc.frequency.setValueAtTime(180, now);
+                    osc.frequency.linearRampToValueAtTime(70, now + 0.12);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.12);
+                    osc.start(now);
+                    osc.stop(now + 0.12);
+                }
+            } catch(e) {}
+        }
+
+        function playSound(type) {
+            try {
+                initAudio();
+                if (!audioCtx) return;
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                const now = audioCtx.currentTime;
+
+                if (type === 'click') {
+                    osc.frequency.setValueAtTime(440, now);
+                    osc.frequency.exponentialRampToValueAtTime(880, now + 0.08);
+                    gain.gain.setValueAtTime(0.1, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.08);
+                    osc.start(now);
+                    osc.stop(now + 0.08);
+                } else if (type === 'win') {
+                    osc.type = 'sine';
+                    osc.frequency.setValueAtTime(523.25, now);
+                    osc.frequency.setValueAtTime(659.25, now + 0.1);
+                    osc.frequency.setValueAtTime(783.99, now + 0.2);
+                    gain.gain.setValueAtTime(0.15, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.4);
+                    osc.start(now);
+                    osc.stop(now + 0.4);
+                } else if (type === 'lose') {
+                    osc.type = 'sawtooth';
+                    osc.frequency.setValueAtTime(200, now);
+                    osc.frequency.linearRampToValueAtTime(80, now + 0.4);
+                    gain.gain.setValueAtTime(0.2, now);
+                    gain.gain.linearRampToValueAtTime(0.01, now + 0.4);
+                    osc.start(now);
+                    osc.stop(now + 0.4);
+                }
+            } catch(e) {}
+        }
+
+        let playerTeam = [];
+        let enemyTeam = [];
+        let winCount = 0;
+        let defeatedEnemies = [];
+        let currentEnemyWord = "";
+        let selectedStartWord = "一期一会";
+        let gameSpeedMultiplier = 1; // デフォルトスピードを「1倍（通常）」に変更して見やすく
+        let lastGrowthLog = "";
+
+        function setGameSpeed(spd) {
+            playSound('click');
+            gameSpeedMultiplier = spd;
+            document.querySelectorAll('.speed-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(`spd-${spd}`).classList.add('active');
+        }
+
+        const wordPool = [
+            "一期一会", "一石二鳥", "一網打尽", "温故知新", "十人十色", 
+            "千客万来", "起死回生", "疾風怒濤", "百花繚乱", "臥薪嘗胆", 
+            "因果応報", "五里霧中", "自画自賛", "千変万化", "晴耕雨読", 
+            "臨機応変", "森羅万象", "猪突猛進", "心頭滅却", "不撓不屈",
+            "一意専心", "画竜点睛", "波乱万丈", "意気軒昂", "群雄割拠", 
+            "意気投合", "切磋琢磨", "粉骨砕身", "電光石火", "半信半疑", 
+            "明鏡止水", "有言実行", "余裕綽々", "一蓮托生", "自業自得", 
+            "栄枯盛衰", "一触即発", "多事多難", "千載一遇", "破顔一笑", 
+            "平穏無事", "悪戦苦闘", "七転八起", "五臓六腑", "大器晩成", 
+            "試行錯誤", "絶体絶命", "一騎当千", "諸行無常", "一日一善", 
+            "一喜一憂", "一進一退", "一刀両断", "意味深長", "宇内無双", 
+            "栄華盛衰", "気宇壮大", "気炎万丈", "質実剛健", "起承転結", 
+            "空前絶後", "愚公移山", "月下氷人", "喧々諤々", "光風霽月", 
+            "虎視眈眈", "五風十雨", "虎頭蛇尾", "孤軍奮闘", "金科玉条", 
+            "九死一生", "権謀術数", "山紫水明", "三寒四温", "三面楚歌", 
+            "自縄自縛", "弱肉強食", "十全十美", "首尾一貫", "順風満帆", 
+            "白砂青松", "深謀遠慮", "心機一転", "水魚之交", "酔生夢死", 
+            "泰山北斗", "大同小異", "朝三暮四", "直情径行", "東奔西走", 
+            "独立独歩", "内憂外患", "難攻不落", "二律背反", "百戦錬磨", 
+            "風光明媚", "平身低頭", "傍目八目", "本末転倒", "無為徒食"
+        ];
+
+        const wordFlavorMap = {
+            "一期一会": ["一生に一度", "巡る期間の", "二度とない", "出会い"],
+            "一石二鳥": ["一つの石で", "ターゲットを", "二つ同時に", "仕留める"],
+            "一網打尽": ["一つの網で", "一網にして", "悪党どもを", "捕らえて制圧"],
+            "温故知新": ["古きをたずね", "歴史を知り", "新しい真理を", "見出す"],
+            "十人十色": ["十人の人が", "それぞれに", "違った個性を", "放つ"],
+            "千客万来": ["数多の客が", "次々と引きも", "切らず訪れて", "大繁盛"],
+            "起死回生": ["絶望の死から", "身を翻して", "生還を果たす", "大逆転劇"],
+            "疾風怒濤": ["激しい嵐と", "荒れ狂う怒濤", "勢いよく", "進む"],
+            "百花繚乱": ["無数の花が", "一斉に咲き", "美しさを", "競い合う"],
+            "臥薪嘗胆": ["薪の上に臥し", "苦難に耐え", "胆をなめて", "雪辱を誓う"],
+            "因果応報": ["原因があって", "結果が生じ", "善悪の報いを", "受ける"],
+            "五里霧中": ["五里の霧に", "包まれて", "方向が見えず", "迷い込む"],
+            "自画自賛": ["自分の絵を", "自分で描いて", "得意げに", "褒め称える"],
+            "千変万化": ["千回も変わり", "変幻して", "万の姿に", "化ける"],
+            "晴耕雨読": ["晴れた日に耕し", "雨の日に", "読書をして", "暮らす"],
+            "臨機応変": ["臨む機会に", "その都度応じ", "柔軟に", "変化する"],
+            "森羅万象": ["森羅の木々と", "万物の象る", "この世の", "すべての理"],
+            "猪突猛進": ["猪の如く", "まっすぐに", "猛烈な勢いで", "突き進む"],
+            "心頭滅却": ["心の頭を滅し", "雑念を消して", "無の境地に", "至る"],
+            "不撓不屈": ["困難に折れず", "撓まず曲がらず", "決して", "屈しない"],
+            "一意専心": ["一つの目標に", "全神経を集中し", "脇目を振らず", "ひたむきに励む"],
+            "画竜点睛": ["絵の竜を描き", "最後に点を打って", "魂と命を", "吹き込む"],
+            "波乱万丈": ["激しく波立ち", "乱れてうねり", "万の丈に", "膨らむドラマ"],
+            "意気軒昂": ["胸の意気が", "高く昂ぶり", "気力に満ちて", "威勢が良い"],
+            "群雄割拠": ["群がる英雄が", "各地に拠点を置き", "覇権を争い", "対立する"],
+            "意気投合": ["互いの意気が", "投げかけ合い", "ぴったりと", "ひとつになる"],
+            "切磋琢磨": ["骨や角を削り", "磨き上げる如く", "互いに競い", "高め合う"],
+            "粉骨砕身": ["骨を粉にして", "身を砕くほど", "全力で", "働き尽くす"],
+            "電光石火": ["稲妻の光と", "石を打つ火の如く", "極めて素早い", "素早い動き"],
+            "半信半疑": ["半分は信じ", "半分は疑い", "確信を持てず", "迷う様子"],
+            "明鏡止水": ["曇りなき鏡と", "静まり返る水面", "澄み切った", "穏やかな心"],
+            "有言実行": ["口にした言葉を", "責任を持って", "必ずやり", "通す"],
+            "余裕綽々": ["ゆったりと", "落ち着き払って", "慌てない", "様子"],
+            "一蓮托生": ["同じ蓮の台に", "運命を共に", "託して", "生きる"],
+            "自業自得": ["自らの行いの", "報いを", "自分自身で", "受ける"],
+            "栄枯盛衰": ["栄えては枯れ", "盛んでは衰える", "世の常の", "移り変わり"],
+            "一触即発": ["一回触れれば", "即座に爆発する", "極めて", "危うい状態"],
+            "多事多難": ["多くの事柄と", "多くの難問が", "次々と", "降りかかる"],
+            "千載一遇": ["千年に一度", "巡ってくる", "めったにない", "チャンス"],
+            "破顔一笑": ["顔をほころばせ", "ニッコリと", "笑顔を", "見せる"],
+            "平穏無事": ["何事もなく", "穏やかで", "平らな", "日々"],
+            "悪戦苦闘": ["悪条件の中で", "苦しみながら", "懸命に", "戦う"],
+            "七転八起": ["七度転んでも", "八度起き上がる", "諦めない", "不屈の精神"],
+            "五臓六腑": ["人の体内の", "すべての器官に", "染み渡る", "心地よさ"],
+            "大器晩成": ["大きな器は", "完成するまでに", "長い年月が", "かかる"],
+            "試行錯誤": ["何度も試し", "失敗を重ねて", "正解を", "見つけ出す"],
+            "絶体絶命": ["もはや逃げ場のない", "絶望的な", "窮地に", "立たされる"],
+            "一騎当千": ["一人で千人を", "相手にできるほど", "圧倒的な", "強さ"],
+            "諸行無常": ["この世のすべては", "常に変化し", "留まることがない", "真理"],
+            "一日一善": ["毎日欠かさず", "一つの良い行いを", "積み", "重ねる"],
+            "一喜一憂": ["状況が変わるたび", "喜んだり", "心配したりして", "落ち着かない"],
+            "一進一退": ["進んだり", "引いたりして", "状況が", "なかなか決まらない"],
+            "一刀両断": ["一振りの刀で", "真っ二つに", "迷いなく", "断ち切る"],
+            "意味深長": ["言葉の奥に", "深い意味が", "隠されている", "様子"],
+            "宇内無双": ["天下の中で", "並ぶ者なき", "圧倒的な", "最強の存在"],
+            "栄華盛衰": ["富み栄え", "華やかに", "盛んになり", "やがて衰える"],
+            "気宇壮大": ["心構えや度量が", "ものすごく大きく", "雄大で", "立派"],
+            "気炎万丈": ["燃え上がる炎の如く", "意気込みが", "非常に", "盛んである"],
+            "質実剛健": ["飾り気がなく", "真面目で", "力強く", "逞しい"],
+            "起承転結": ["物事の始まり", "継承と変化", "急展開", "そして結び"],
+            "空前絶後": ["過去に例がなく", "将来も起らない", "史上空前の", "大出来事"],
+            "愚公移山": ["愚直な努力で", "山を少しずつ", "動かし続ける", "大事業"],
+            "月下氷人": ["月下の老人と", "氷の上を歩く人の如く", "男女の縁を", "取り持つ者"],
+            "喧々諤々": ["多くの人が", "盛んに議論し", "意見を", "交わし合う"],
+            "光風霽月": ["雨上がりの晴れた空と", "爽やかな風の如く", "清らかな", "人柄"],
+            "虎視眈眈": ["虎が獲物を狙い", "じっとチャンスを", "窺って", "待つ様子"],
+            "五風十雨": ["五日に一度の風と", "十日に一度の雨で", "農作物が", "よく育つ気候"],
+            "虎頭蛇尾": ["虎の頭の如く", "勢いよく始まり", "蛇の尾の如く", "尻すぼみに終わる"],
+            "孤軍奮闘": ["味方のない孤立した状態で", "たった一人で", "懸命に", "戦い抜く"],
+            "金科玉条": ["絶対に守るべき", "尊い法律や", "きまりの", "こと"],
+            "九死一生": ["九つの死の危険から", "奇跡的に一人生き", "残る", "極限の生還"],
+            "権謀術数": ["巧みな策略と", "人目を欺く", "ずる賢い", "手段の数々"],
+            "山紫水明": ["山は紫色に霞み", "川は澄み渡り", "自然の景色が", "美しいこと"],
+            "三寒四温": ["寒い日が三日続き", "暖かい日が四日続く", "春の", "気候変化"],
+            "三面楚歌": ["四方を敵に囲まれ", "誰も味方がいない", "完全な", "孤立無援"],
+            "自縄自縛": ["自分の縄で", "自分を縛る如く", "自分で自分を", "苦しめる"],
+            "弱肉強食": ["弱い者が", "強い者の餌食と", "なる世界の", "掟"],
+            "十全十美": ["欠点が全くなく", "完璧に", "整っている", "状態"],
+            "首尾一貫": ["初めから終わりまで", "同じ方針で", "筋道が", "通っている"],
+            "順風満帆": ["追い風を受け", "帆がいっぱいに膨らみ", "順調に", "進む"],
+            "白砂青松": ["白い砂浜と", "青い松原が続く", "美しい", "海岸の景色"],
+            "深謀遠慮": ["遠い将来を見据え", "奥深くまで", "綿密に", "計画する"],
+            "心機一転": ["心の機微を一新し", "新たな気持ちで", "物事に", "挑む"],
+            "水魚之交": ["水と魚の如く", "切っても切れない", "非常に", "親密な交際"],
+            "酔生夢死": ["何も成し遂げず", "ただ酒に酔い夢を見るように", "ぼんやりと", "一生を送る"],
+            "泰山北斗": ["泰山と北斗七星の如く", "その道で", "誰もが仰ぎ見る", "最高峰の権威"],
+            "大同小異": ["細かい違いはあっても", "大体は", "同じで", "大差ない"],
+            "朝三暮四": ["目の前の違いに囚われ", "本質が同じなのに", "惑わされる", "こと"],
+            "直情径行": ["感情の赴くまま", "思った通りに", "遠慮なく", "行動する"],
+            "東奔西走": ["東へ走り西へ駆ける如く", "忙しく", "あちこちに", "駆け回る"],
+            "独立独歩": ["他人に頼らず", "自分の信じる道を", "一人で", "進む"],
+            "内憂外患": ["内部の心配事と", "外部からの脅威が", "同時に", "重なる"],
+            "難攻不落": ["攻めるのが非常に難しく", "決して", "落とされない", "要塞"],
+            "二律背反": ["一つの命題の中で", "互いに矛盾する", "二つの主張が", "対立する"],
+            "百戦錬磨": ["数々の戦いを経て", "経験を積み", "非常に", "慣れ親しんだ腕"],
+            "風光明媚": ["山や川などの", "自然の景色が", "非常に", "美しいさま"],
+            "平身低頭": ["身を低くし", "頭を下げて", "ひたすら", "恐縮する"],
+            "傍目八目": ["当事者よりも", "そばで見ている方が", "物事の事情が", "よくわかる"],
+            "本末転倒": ["大事なことと", "どうでもいいことを", "すっかり", "取り違える"],
+            "無為徒食": ["何もせず", "ただぶらぶらと", "無駄に日を", "過ごすこと"]
+        };
+
+        const strokeCountMap = {
+            "一": 1, "二": 2, "三": 3, "四": 5, "五": 4, "六": 4, "七": 2, "八": 2, "九": 2, "十": 2,
+            "百": 6, "千": 3, "万": 3, "期": 12, "会": 6, "石": 5, "鳥": 11, "網": 14, "打": 5, "尽": 7,
+            "温": 12, "故": 9, "知": 8, "新": 13, "人": 2, "色": 6, "客": 9, "来": 7, "起": 10, "死": 6,
+            "回": 6, "生": 5, "疾": 10, "風": 9, "怒": 9, "濤": 17, "花": 7, "繚": 17, "乱": 7,
+            "臥": 8, "薪": 16, "嘗": 14, "胆": 9, "因": 6, "果": 8, "応": 7, "報": 12, "里": 7,
+            "霧": 19, "中": 4, "自": 6, "画": 8, "賛": 15, "変": 9, "化": 4, "晴": 12, "耕": 10,
+            "雨": 8, "読": 14, "臨": 18, "機": 16, "象": 12, "森": 12, "羅": 19, "猪": 11,
+            "突": 8, "猛": 11, "進": 7, "心": 4, "頭": 16, "滅": 13, "却": 7, "不": 4, "撓": 12, "屈": 8,
+            "意": 13, "気": 6, "軒": 10, "昂": 8, "群": 13, "雄": 12, "割": 12, "拠": 8, "投": 7, "合": 6,
+            "切": 4, "磋": 14, "磨": 15, "粉": 10, "骨": 10, "砕": 9, "身": 7, "電": 13, "光": 6, "石": 5,
+            "火": 4, "半": 5, "信": 9, "疑": 14, "明": 8, "鏡": 19, "止": 4, "水": 4, "有": 6, "言": 7,
+            "実": 8, "行": 6, "余": 7, "裕": 13, "綽": 14, "蓮": 13, "托": 6, "生": 5, "業": 13, "得": 11,
+            "栄": 9, "枯": 8, "盛": 11, "衰": 10, "触": 13, "即": 7, "発": 9, "多": 6, "事": 8, "難": 18,
+            "載": 13, "遇": 12, "破": 10, "顔": 18, "笑": 10, "平": 5, "穏": 16, "無": 12, "事": 8, "悪": 11,
+            "戦": 13, "苦": 8, "闘": 16, "七": 2, "転": 11, "八": 2, "起": 10, "五": 4, "臓": 19, "六": 4,
+            "腑": 12, "大": 3, "器": 15, "晩": 12, "成": 6, "試": 13, "行": 6, "錯": 16, "誤": 14, "絶": 12,
+            "体": 7, "命": 8, "騎": 18, "当": 6, "千": 3, "諸": 15, "常": 11, "善": 12, "喜": 12, "憂": 15,
+            "進": 7, "退": 9, "刀": 2, "両": 6, "断": 11, "意": 13, "味": 9, "深": 11, "長": 8, "宇": 6,
+            "内": 4, "双": 4, "華": 10, "壮": 6, "大": 3, "炎": 8, "万": 3, "丈": 3, "質": 15, "剛": 10,
+            "健": 11, "承": 8, "結": 12, "前": 9, "後": 9, "愚": 13, "公": 4, "移": 11, "山": 3, "月": 4,
+            "下": 3, "氷": 5, "人": 2, "喧": 12, "諤": 16, "霽": 22, "虎": 8, "視": 8, "眈": 9, "十": 2,
+            "雨": 8, "頭": 16, "蛇": 11, "尾": 7, "孤": 8, "軍": 9, "奮": 16, "闘": 16, "金": 8, "科": 9,
+            "条": 7, "玉": 5, "葉": 12, "九": 2, "死": 6, "生": 5, "権": 15, "謀": 16, "術": 11, "数": 13,
+            "山": 3, "紫": 12, "明": 8, "水": 4, "三": 3, "寒": 12, "温": 12, "四": 5, "温": 12, "面": 9,
+            "楚": 13, "歌": 14, "縄": 11, "縛": 15, "弱": 10, "肉": 6, "強": 11, "食": 9, "全": 6, "美": 9,
+            "首": 9, "尾": 7, "一": 1, "貫": 11, "順": 12, "風": 9, "満": 13, "帆": 6, "説": 14, "紛": 10,
+            "白": 5, "砂": 9, "青": 8, "松": 8, "深": 11, "謀": 16, "遠慮": 10, "慮": 15, "機": 16, "一": 1,
+            "転": 11, "魚": 11, "交": 6, "酔": 15, "生": 5, "夢": 13, "死": 6, "泰": 10, "山": 3, "北": 5,
+            "斗": 4, "同": 6, "小": 3, "異": 11, "朝": 12, "三": 3, "暮": 14, "四": 5, "直": 8, "情": 11,
+            "径": 8, "行": 6, "東": 8, "奔": 8, "西": 6, "走": 7, "独": 9, "立": 5, "歩": 8, "内": 4,
+            "憂": 15, "外": 5, "患": 9, "難": 18, "攻": 7, "不": 4, "落": 12, "二": 2, "律": 9, "背": 9,
+            "反": 4, "百": 6, "戦": 13, "錬": 16, "磨": 15, "風": 9, "光": 6, "明": 8, "媚": 12, "平": 5,
+            "身": 7, "低": 7, "頭": 16, "傍": 12, "目": 5, "八": 2, "目": 5, "本": 5, "末": 5, "転": 11,
+            "倒": 10, "無": 12, "為": 9, "徒": 10, "食": 9
+        };
+
+        function getStrokeCount(char) {
+            return strokeCountMap[char] || 10;
+        }
+
+        function getFlavorForWordAndIndex(word, index) {
+            if (wordFlavorMap[word] && wordFlavorMap[word][index]) {
+                return wordFlavorMap[word][index];
+            }
+            return "意味のパーツ";
+        }
+
+        function pickRandomTitleWord() {
+            playSound('click');
+            selectedStartWord = wordPool[Math.floor(Math.random() * wordPool.length)];
+            document.getElementById('title-word-display').innerText = selectedStartWord;
+        }
+
+        function createCharData(char, wordContext, index, customFlavor = null) {
+            const strokes = getStrokeCount(char);
+            let hp = 5 + (strokes - 10);
+            let atk = 5 - Math.floor((strokes - 10) / 2);
+            
+            if (hp < 3) hp = 3;
+            if (atk < 1) atk = 1;
+
+            let ability = "-";
+            let hasShield = false;
+            let isTaunt = false;
+            let isSwift = false;
+
+            const code = char.codePointAt(0);
+            const randType = code % 15;
+            if (randType === 0) { ability = "聖盾"; hasShield = true; }
+            else if (randType === 1) { ability = "挑発"; isTaunt = true; }
+            else if (randType === 2) { ability = "疾風"; isSwift = true; }
+
+            const flavor = customFlavor !== null ? customFlavor : getFlavorForWordAndIndex(wordContext, index);
+
+            return {
+                char: char,
+                wordContext: wordContext,
+                flavor: flavor,
+                strokes: strokes,
+                maxHp: hp,
+                hp: hp,
+                atk: atk,
+                star: 1,
+                ability: ability,
+                hasShield: hasShield,
+                isTaunt: isTaunt,
+                isSwift: isSwift,
+                isDead: false
+            };
+        }
+
+        function startGame() {
+            playSound('click');
+            playerTeam = [];
+            for (let i = 0; i < 4; i++) {
+                playerTeam.push(createCharData(selectedStartWord[i], selectedStartWord, i));
+            }
+            winCount = 0;
+
+            showScreen('game-screen');
+            document.getElementById('current-speed-label').innerText = `速度: ${gameSpeedMultiplier}倍速`;
+            setupNewBattle();
+        }
+
+        function setupNewBattle() {
+            document.getElementById('stage-title').innerText = `第 ${winCount + 1} 戦`;
+            document.getElementById('win-streak').innerText = `連勝数: ${winCount}`;
+            
+            const tier = Math.floor(winCount / 10);
+            let enemyLabelText = `【敵チーム】`;
+            if (winCount < 3) {
+                enemyLabelText = `【敵チーム】 (※序盤：少し弱め)`;
+            } else if (tier > 0) {
+                enemyLabelText = `【敵チーム】 (難易度 Lv.${tier + 1}：強化中)`;
+            }
+            document.getElementById('enemy-label').innerText = enemyLabelText;
+
+            document.getElementById('btn-battle').style.display = 'inline-block';
+            document.getElementById('log-box').innerHTML = '<div class="log-entry">バトル準備完了。「バトル開始！」を押してください。</div>';
+
+            currentEnemyWord = wordPool[Math.floor(Math.random() * wordPool.length)];
+            enemyTeam = [];
+            
+            for (let i = 0; i < 4; i++) {
+                let c = currentEnemyWord[i];
+                let e = createCharData(c, currentEnemyWord, i);
+                let bonusHp = 0;
+                let bonusAtk = 0;
+
+                if (winCount < 3) {
+                    e.hp = Math.max(4, e.hp - 1);
+                    e.maxHp = e.hp;
+                    e.atk = Math.max(1, e.atk - 1);
+                } else {
+                    bonusHp = (winCount * 1.2) + (tier * 1.5);
+                    bonusAtk = Math.floor(winCount / 4) + tier;
+                    e.hp += Math.floor(bonusHp);
+                    e.maxHp += Math.floor(bonusHp);
+                    e.atk += bonusAtk;
+                }
+                enemyTeam.push(e);
+            }
+            defeatedEnemies = JSON.parse(JSON.stringify(enemyTeam));
+
+            renderTeams();
+        }
+
+        function showScreen(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.style.display = 'none');
+            document.getElementById(screenId).style.display = 'block';
+        }
+
+        function renderTeams() {
+            renderTeamBox('enemy-team', enemyTeam, 'enemy');
+            renderTeamBox('player-team', playerTeam, 'player');
+        }
+
+        function getAbilityBadgeHtml(ability) {
+            if (ability === "聖盾") return `<span class="ability-badge ability-shield">🛡️ 聖盾</span>`;
+            if (ability === "挑発") return `<span class="ability-badge ability-taunt">🎯 挑発</span>`;
+            if (ability === "疾風") return `<span class="ability-badge ability-swift">⚡ 疾風</span>`;
+            return `<span class="ability-badge ability-none">-</span>`;
+        }
+
+        function renderTeamBox(elementId, team, type) {
+            const box = document.getElementById(elementId);
+            box.innerHTML = '';
+            team.forEach((item, idx) => {
+                const card = document.createElement('div');
+                card.id = `${type}-card-${idx}`;
+                card.className = `card ${type} ${item.isDead ? 'dead' : ''} ${item.star === 2 ? 'star2' : ''}`;
+                
+                card.innerHTML = `
+                    ${item.star === 2 ? '<div class="star-badge">★2</div>' : ''}
+                    ${getAbilityBadgeHtml(item.ability)}
+                    <div style="font-size:7px; color:#aaa;">[${item.strokes}画]</div>
+                    <div class="char">${item.char}</div>
+                    <div class="flavor">${item.flavor}</div>
+                    <div class="stats">HP:${item.hp}/${item.maxHp} 攻:${item.atk}</div>
+                `;
+                box.appendChild(card);
+            });
+        }
+
+        function triggerDamageFlash(teamType, index) {
+            const cardEl = document.getElementById(`${teamType}-card-${index}`);
+            if (cardEl) {
+                cardEl.classList.add('damage-flash');
+                setTimeout(() => {
+                    cardEl.classList.remove('damage-flash');
+                }, 300);
+            }
+        }
+
+        function log(msg, className = "") {
+            const logBox = document.getElementById('log-box');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${className}`;
+            entry.innerText = msg;
+            logBox.appendChild(entry);
+            logBox.scrollTop = logBox.scrollHeight;
+        }
+
+        async function runAutoBattle() {
+            playSound('click');
+            document.getElementById('btn-battle').style.display = 'none';
+            log("--- バトル開始！ ---");
+
+            // 全体的な基準速度をゆったり目に調整 (ベースを800msに)
+            const baseDelay = 800;
+
+            while (hasAlive(playerTeam) && hasAlive(enemyTeam)) {
+                const attacker = getAliveRandom(playerTeam);
+                const defIndex = getTargetIndex(enemyTeam);
+                if (attacker && defIndex !== -1) {
+                    const defender = enemyTeam[defIndex];
+                    await attackProcess(attacker, defender, "味方", "敵", defIndex);
+                    renderTeams();
+                    await sleep(Math.floor(baseDelay / gameSpeedMultiplier));
+                }
+                if (!hasAlive(enemyTeam)) break;
+
+                const eAttacker = getAliveRandom(enemyTeam);
+                const pDefIndex = getTargetIndex(playerTeam);
+                if (eAttacker && pDefIndex !== -1) {
+                    const eDefender = playerTeam[pDefIndex];
+                    await attackProcess(eAttacker, eDefender, "敵", "味方", pDefIndex);
+                    renderTeams();
+                    await sleep(Math.floor(baseDelay / gameSpeedMultiplier));
+                }
+            }
+
+            if (hasAlive(playerTeam)) {
+                playSound('win');
+                log("🎉 勝利！", "log-win");
+                winCount++;
+                
+                applyTeamGrowth();
+
+                await sleep(Math.floor(1000 / gameSpeedMultiplier));
+                openDraftScreen();
+            } else {
+                playSound('lose');
+                log("💀 敗北...", "log-lose");
+                await sleep(Math.floor(1000 / gameSpeedMultiplier));
+                
+                document.getElementById('final-score').innerText = `記録: ${winCount} 連勝達成！`;
+                
+                const finalWordStr = playerTeam.map(c => c.char).join('');
+                document.getElementById('go-title-word').innerText = finalWordStr;
+                
+                // 【フレーバー結合】：「、」を入れずにつなげる
+                const connectedFlavor = playerTeam.map(c => c.flavor).join('') + '。';
+                document.getElementById('go-flavor-summary').innerText = connectedFlavor;
+
+                const goBox = document.getElementById('gameover-team-box');
+                goBox.innerHTML = '';
+                playerTeam.forEach((item) => {
+                    const card = document.createElement('div');
+                    card.className = `card player ${item.star === 2 ? 'star2' : ''}`;
+                    card.innerHTML = `
+                        ${item.star === 2 ? '<div class="star-badge">★2</div>' : ''}
+                        ${getAbilityBadgeHtml(item.ability)}
+                        <div style="font-size:7px; color:#aaa;">[${item.strokes}画]</div>
+                        <div class="char">${item.char}</div>
+                        <div class="flavor">${item.flavor}</div>
+                        <div class="stats">HP:${item.maxHp} 攻:${item.atk}</div>
+                    `;
+                    goBox.appendChild(card);
+                });
+
+                showScreen('gameover-screen');
+            }
+        }
+
+        function applyTeamGrowth() {
+            let reports = [];
+            for (let i = 0; i < 3; i++) {
+                const aliveMembers = playerTeam.filter(c => !c.isDead);
+                const targetPool = aliveMembers.length > 0 ? aliveMembers : playerTeam;
+                const targetChar = targetPool[Math.floor(Math.random() * targetPool.length)];
+                
+                if (Math.random() < 0.5) {
+                    targetChar.maxHp += 1;
+                    targetChar.hp += 1;
+                    reports.push(`『${targetChar.char}』のHP+1`);
+                } else {
+                    targetChar.atk += 1;
+                    reports.push(`『${targetChar.char}』の攻撃+1`);
+                }
+            }
+            lastGrowthLog = `📈 【戦闘勝利ボーナス】チーム全体でステータスが計3ポイント上昇しました！<br>` + reports.join(' ／ ');
+        }
+
+        async function attackProcess(att, def, attTeamName, defTeamName, defIndex) {
+            let hits = att.isSwift ? 2 : 1;
+            for (let i = 0; i < hits; i++) {
+                if (att.isDead || def.isDead) break;
+
+                let hitLabel = (att.isSwift && i === 0) ? "の連続攻撃(1撃目)" : (att.isSwift && i === 1) ? "の連続攻撃(2撃目)" : "の攻撃";
+                
+                log(`⚔️ [${attTeamName}] 『${att.char}（${att.flavor}）』${hitLabel} -> [${defTeamName}] 『${def.char}（${def.flavor}）』`);
+
+                if (def.hasShield) {
+                    def.hasShield = false;
+                    playHitSound(2);
+                    log(`  🛡️ 『${def.char}』は【聖盾】でダメージを無効化した！`);
+                } else {
+                    let dmg = att.atk;
+                    playHitSound(dmg);
+                    triggerDamageFlash(defTeamName === "味方" ? "player" : "enemy", defIndex);
+
+                    def.hp -= dmg;
+                    att.hp -= Math.floor(dmg / 2);
+                    log(`  💥 『${def.char}』に ${dmg} ダメージ！（残HP: ${def.hp}/${def.maxHp}）`);
+                }
+
+                if (def.hp <= 0) { def.hp = 0; def.isDead = true; log(`  ☠️ [${defTeamName}] 『${def.char}』は倒れた！`); }
+                if (att.hp <= 0) { att.hp = 0; att.isDead = true; log(`  ☠️ [${attTeamName}] 『${att.char}』は倒れた！`); break; }
+                
+                await sleep(Math.floor(300 / gameSpeedMultiplier));
+            }
+        }
+
+        function openDraftScreen() {
+            showScreen('draft-screen');
+            document.getElementById('growth-report-box').innerHTML = lastGrowthLog;
+
+            const container = document.getElementById('draft-lanes-container');
+            container.innerHTML = '';
+
+            for (let i = 0; i < 4; i++) {
+                const enemyItem = defeatedEnemies[i];
+                const playerItem = playerTeam[i];
+
+                const lane = document.createElement('div');
+                lane.className = 'draft-lane';
+
+                const title = document.createElement('div');
+                title.className = 'lane-title';
+                title.innerText = `【 ${i+1}文字目 】`;
+                lane.appendChild(title);
+
+                const enemyCard = document.createElement('div');
+                enemyCard.className = `card enemy ${enemyItem.star === 2 ? 'star2' : ''}`;
+                enemyCard.innerHTML = `
+                    ${getAbilityBadgeHtml(enemyItem.ability)}
+                    <div style="font-size:7px; color:#aaa;">[${enemyItem.strokes}画]</div>
+                    <div class="char">${enemyItem.char}</div>
+                    <div class="flavor">${enemyItem.flavor}</div>
+                    <div class="stats">HP:${enemyItem.maxHp} 攻:${enemyItem.atk}</div>
+                `;
+                lane.appendChild(enemyCard);
+
+                const arrow = document.createElement('div');
+                arrow.style.color = '#ffcc00';
+                arrow.style.fontSize = '12px';
+                arrow.innerText = '⬇️ チェンジ';
+                lane.appendChild(arrow);
+
+                const playerCard = document.createElement('div');
+                playerCard.className = `draft-card player-card ${playerItem.star === 2 ? 'star2' : ''}`;
+                playerCard.style.width = '100%';
+                playerCard.innerHTML = `
+                    ${playerItem.star === 2 ? '<div class="star-badge">★2</div>' : ''}
+                    ${getAbilityBadgeHtml(playerItem.ability)}
+                    <div style="font-size:7px; color:#aaa;">[${playerItem.strokes}画]</div>
+                    <div class="char">${playerItem.char}</div>
+                    <div class="flavor">${playerItem.flavor}</div>
+                    <div class="stats">HP:${playerItem.maxHp} 攻:${playerItem.atk}</div>
+                `;
+                playerCard.title = "クリックしてこの位置の文字を入れ替え/合体";
+                playerCard.onclick = () => {
+                    playSound('click');
+                    executeLaneDraft(i, enemyItem);
+                };
+                lane.appendChild(playerCard);
+
+                container.appendChild(lane);
+            }
+        }
+
+        function executeLaneDraft(laneIndex, enemyItem) {
+            const playerItem = playerTeam[laneIndex];
+
+            if (playerItem.char === enemyItem.char) {
+                playerItem.star = 2;
+                playerItem.maxHp = Math.floor(playerItem.maxHp * 1.5);
+                playerItem.hp = playerItem.maxHp;
+                playerItem.atk = Math.floor(playerItem.atk * 1.5);
+                if (!playerItem.ability.includes("★2") && playerItem.ability !== "-") {
+                    playerItem.ability += "★2";
+                }
+                playerItem.flavor = `${playerItem.flavor}・${enemyItem.flavor}`;
+                alert(`✨ 同じ ${laneIndex+1}文字目の『${enemyItem.char}』が揃い、★2に合体しました！`);
+            } else {
+                let newCharData = createCharData(enemyItem.char, currentEnemyWord, laneIndex, enemyItem.flavor);
+                newCharData.hp = enemyItem.maxHp;
+                newCharData.maxHp = enemyItem.maxHp;
+                newCharData.atk = enemyItem.atk;
+                newCharData.ability = enemyItem.ability;
+                newCharData.hasShield = enemyItem.hasShield;
+                newCharData.isTaunt = enemyItem.isTaunt;
+                newCharData.isSwift = enemyItem.isSwift;
+
+                playerTeam[laneIndex] = newCharData;
+                alert(`🤝 ${laneIndex+1}文字目を『${enemyItem.char}』に入れ替えました！（意味：${newCharData.flavor}）`);
+            }
+
+            startNextBattle();
+        }
+
+        function startNextBattle() {
+            playSound('click');
+            playerTeam.forEach(c => { c.hp = c.maxHp; c.isDead = false; });
+            showScreen('game-screen');
+            document.getElementById('current-speed-label').innerText = `速度: ${gameSpeedMultiplier}倍速`;
+            setupNewBattle();
+        }
+
+        function getAliveRandom(team) {
+            const alive = team.filter(c => !c.isDead);
+            if (alive.length === 0) return null;
+            return alive[Math.floor(Math.random() * alive.length)];
+        }
+
+        function getTargetIndex(team) {
+            const aliveIndices = [];
+            team.forEach((c, idx) => {
+                if (!c.isDead) aliveIndices.push(idx);
+            });
+            if (aliveIndices.length === 0) return -1;
+            
+            const tauntIndices = aliveIndices.filter(idx => team[idx].isTaunt);
+            if (tauntIndices.length > 0) {
+                return tauntIndices[Math.floor(Math.random() * tauntIndices.length)];
+            }
+            return aliveIndices[Math.floor(Math.random() * aliveIndices.length)];
+        }
+
+        function hasAlive(team) { return team.some(c => !c.isDead); }
+        function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
+        function resetToTitle() { playSound('click'); showScreen('title-screen'); }
+    </script>
+</body>
+</html>
